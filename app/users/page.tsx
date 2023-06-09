@@ -10,8 +10,9 @@ export default async function Users() {
     const usersData: Promise<User[]> = getAllUsers();
     const users = await usersData
 
+    console.log('Hello')
     return (
-        <section>
+        <section className="flex flex-col gap-8">
             <h2>
                 <Link href="/">Back to Home</Link>
             </h2>
