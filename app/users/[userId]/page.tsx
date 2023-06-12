@@ -3,6 +3,9 @@ import getUser from "@/lib/getUser";
 import getUserPosts from "@/lib/getUserPosts";
 import UserPosts from "./components/UserPosts";
 import { Metadata } from "next";
+import getAllUsers from "@/lib/getAllUsers";
+import { notFound } from 'next/navigation';
+
 
 type Params = {
     params: {
@@ -14,6 +17,11 @@ export async function generateMetadata({ params: { userId } }: Params): Promise<
     // Next deduplicates requests, so this can be used here as well and it will not trigger two requests
     const userData: Promise<User> = getUser(userId);
     const user: User = await userData
+    if (!user.name) {
+        return {
+            title: "User Not Found"
+        }
+    }
 
     return {
         title: user.name,
@@ -26,13 +34,22 @@ export default async function UserPage({ params: { userId } }: Params) {
     const userPostsData: Promise<Post[]> = getUserPosts(userId);
 
     const user = await userData;
+    if (!user.name) return notFound();
     return (
         <section className="flex flex-col items-center gap-4">
             <h1>{user.name}</h1>
             <Suspense fallback={<h2>Loading...</h2>}>
-                {/* @ts-expect-error Server Component */}
                 <UserPosts promise={userPostsData} />
             </Suspense>
         </section>
     )
+}
+
+// We can provide static params in advance so that nextjs will know what the params will be and statically generate those pages in advance (this is SSG generation)
+export async function generateStaticParams() {
+    const usersData: Promise<User[]> = getAllUsers();
+    const users = await usersData;
+    return users.map(user => (
+        { userId: user.id.toString() }
+    ))
 }
